@@ -1,0 +1,249 @@
+<!DOCTYPE html>
+<html>
+
+<head>
+    <meta name="viewport" content="width=device-width, initial-scale=1">
+    <style>
+        body {
+            font-family: Arial, sans-serif;
+            margin: 0;
+            padding: 0;
+            display: flex;
+            justify-content: center;
+            align-items: center;
+            height: 100vh;
+            background-color: #f2f2f2;
+        }
+
+        .chat-container {
+            width: 800px;
+            background-color: white;
+            box-shadow: 0px 0px 10px 0px rgba(0, 0, 0, 0.1);
+            border-radius: 10px;
+            overflow: hidden;
+        }
+
+        .chat-header {
+            background-color: #4CAF50;
+            color: white;
+            padding: 10px;
+            text-align: center;
+        }
+
+        .chat-messages {
+            padding: 10px;
+            overflow-y: auto;
+            height: 500px;
+        }
+
+        .message {
+            padding: 10px;
+            border-radius: 10px;
+            overflow: hidden;
+            display: flex;
+            flex-direction: row;
+        }
+
+        .message-sender {
+            color: black;
+            justify-content: end;
+        }
+
+        .message-receiver {
+            color: black;
+        }
+
+        .message-info {
+            font-size: 12px;
+            color: #888;
+            margin-top: 5px;
+            text-align: right;
+        }
+
+        .chat-input {
+            display: flex;
+            align-items: center;
+            padding: 10px 20px;
+            justify-content: end;
+        }
+
+        input[type="text"] {
+            flex: 1;
+            padding: 10px;
+            font-size: 16px;
+            border: 1px solid #ccc;
+            border-radius: 5px;
+            margin-right: 10px;
+        }
+
+        button {
+            padding: 10px 20px;
+            font-size: 16px;
+            background-color: #4CAF50;
+            color: white;
+            border: none;
+            border-radius: 5px;
+            cursor: pointer;
+        }
+
+        button:hover {
+            background-color: #45a049;
+        }
+
+        .username {
+            background-color: gray;
+            height: 50px;
+            width: 50px;
+            font-size: 12px;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            border-radius: 50%;
+            color: white;
+        }
+
+        .message_time {
+            font-size: 10px;
+            color: gray;
+            width: 100%;
+        }
+
+        .content {
+            padding: 14px;
+            border-radius: 10px;
+            overflow: hidden;
+        }
+
+        .content_sender {
+            background-color: #45a049;
+        }
+
+        .content_receive {
+            background-color: #00cc0d;
+        }
+
+        .message_time_end {
+            text-align: end;
+            margin-top: 5px;
+        }
+    </style>
+    <script src="https://code.jquery.com/jquery-3.1.1.min.js"
+        integrity="sha256-hVVnYaiADRTO2PzUGmuLJr8BLUSjGIZsDYGmIJLv2b8=" crossorigin="anonymous"></script>
+</head>
+
+<body>
+
+
+
+    <script>
+        function toDate(utcTimeString) {
+
+
+            // Tạo một đối tượng Date từ chuỗi thời gian UTC
+            const utcDate = new Date(utcTimeString);
+
+            // Chuyển múi giờ sang múi giờ của Việt Nam (GMT+7)
+            const vietnamTime = new Date(utcDate.toLocaleString("en-US", { timeZone: "Asia/Ho_Chi_Minh" }));
+
+            // Định dạng thời gian theo ý muốn (ví dụ: "dd/mm/yyyy - HH:MM:SS")
+            const options = { year: "numeric", month: "2-digit", day: "2-digit", hour: "2-digit", minute: "2-digit", second: "2-digit" };
+            const formattedTime = vietnamTime.toLocaleDateString("vi-VN", options);
+
+            return formattedTime; // Kết quả: "28/10/2023 - 15:42:52"
+        }
+        $(document).ready(function () {
+
+            setInterval(function () {
+                $.ajax({
+                    type: 'GET',
+                    url: "/getMessages/{{room}}/",
+                    success: function (response) {
+                        console.log(response);
+                        $("#chat-messages").empty();
+                        for (var key in response.messages) {
+                            //  var temp="<div class='container darker'><b>"+response.messages[key].user+"</b><p>"+response.messages[key].value+"</p><span class='time-left'>"+response.messages[key].date+"</span></div>";
+                            var temp;
+                            if (response.messages[key].user == sessionStorage.getItem("username")) {
+                                temp = `
+                                    <div class="message message-sender">
+                                        <div style="height: max-content; padding:5px 10px; display: flex; flex-direction: column;">
+                                            <div class="content content_sender">${response.messages[key].value}</div>
+                                            <span class="message_time message_time_end">${toDate(response.messages[key].date)}</span>
+                                        </div>
+                                        <div class="username">Hadung</div>
+                                    </div>
+                        	    `
+                            }
+                            else {
+                                temp = `
+                                <div class="message message-receiver">
+                                    <div class="username">Hadung</div>
+                                    <div style="height: max-content; padding:5px 10px; ">
+                                        <div class="content content_receive">${response.messages[key].value}</div>
+                                        <span class="message_time">${toDate(response.messages[key].date)}</span>
+                                    </div>
+                                </div>
+                        	`
+
+                            }
+                            $("#chat-messages").append(temp);
+                            var chatMessages = document.getElementById("chat-messages");
+                            chatMessages.scrollTop = chatMessages.scrollHeight;
+                        }
+                    },
+                    error: function (response) {
+                        alert('An error occured')
+                    }
+                });
+            }, 500);
+        })
+    </script>
+
+    <div class="chat-container">
+        <div class="chat-header">
+            <h2>Room {{room}}</h2>
+        </div>
+        <div class="chat-messages" id="chat-messages">
+        </div>
+        <div class="chat-input">
+            <form id="post-form">
+                {% csrf_token %}
+                <input type="hidden" name="username" id="username" value="{{username}}" />
+                <input type="hidden" name="room_id" id="room_id" value="{{room_details.id}}" />
+                <input type="text" name="message" id="message" placeholder="Type your message" style="width: 400px;">
+                <button type="submit">Send</button>
+                <button type="button" style="background: red;" onclick="logout()">Logout</button>
+            </form>
+        </div>
+    </div>
+</body>
+
+<script type="text/javascript">
+    function logout() {
+        window.location.href = "/";
+    }
+    $(document).ready(function () {
+        sessionStorage.setItem("username", $('#username').val());
+        localStorage.setItem("username", $('#username').val());
+    })
+    $(document).on('submit', '#post-form', function (e) {
+        e.preventDefault();
+
+        $.ajax({
+            type: 'POST',
+            url: '/send',
+            data: {
+                username: $('#username').val(),
+                room_id: $('#room_id').val(),
+                message: $('#message').val(),
+                csrfmiddlewaretoken: $('input[name=csrfmiddlewaretoken]').val(),
+            },
+            success: function (data) {
+                //alert(data)
+            }
+        });
+        document.getElementById('message').value = ''
+    });
+</script>
+
+</html>
